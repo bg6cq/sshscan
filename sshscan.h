@@ -43,15 +43,17 @@
 #define DEFAULT_THREADPOOL_SIZE 16
 
 typedef struct {
+	int jobid;
 	uint32_t ipadrr;
-	uint32_t wlen;
 	int32_t solution;
 	char **wtable;
+	int from;
+	int to;
 } thread_arg_t;
 
 
 void to_bytes(uint32_t val, uint8_t *bytes);
 char *ip2str(uint32_t val);
 int parseSubnet(char *subnet_str, uint32_t *prefix, uint32_t *prefixLength);
-int ConnectSSH(uint32_t ipaddr, char* user, char *passwd);
+int ConnectSSH(int jobid, uint32_t ipaddr, char* user, char *passwd);
 void checkSSH(void *context);

@@ -266,6 +266,10 @@ int thpool_num_threads_working(thpool_* thpool_p){
 	return thpool_p->num_threads_working;
 }
 
+int thpool_num_jobs(thpool_* thpool_p){
+	return thpool_p->jobqueue.len;
+}
+
 
 
 

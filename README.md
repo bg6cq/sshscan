@@ -1,6 +1,6 @@
 # sshscan
 
-Multithreaded ssh scanner for networks
+Multithreaded ssh scanner for one host ip
 
 ## How to compile it
 
@@ -9,7 +9,7 @@ You need to install `libssh-dev`. After that, you can just invoque `make`
 ## How to use it
 
 ```
-sshscan [OPTIONS] [USER_PASSW FILE] [IP RANGE]
+sshscan [OPTIONS] [USER_PASSW FILE] [HOST IP]
 ```
 
 **Options** are:
@@ -21,11 +21,11 @@ sshscan [OPTIONS] [USER_PASSW FILE] [IP RANGE]
 
 **Examples**
 ```
-.\sshscan userpasswdfile 192.168.0.0/24
+.\sshscan userpasswdfile 192.168.0.1
 ```
 
 ```
-.\sshscan -t 128 -v userpasswd 192.168.0.0/24
+.\sshscan -t 128 -v userpasswd 192.168.0.1
 ```
 ## Other tools you should check
 

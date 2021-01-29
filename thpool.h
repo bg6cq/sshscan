@@ -179,6 +179,8 @@ void thpool_destroy(threadpool);
  */
 int thpool_num_threads_working(threadpool);
 
+int thpool_num_jobs(threadpool);
+
 
 #ifdef __cplusplus
 }
