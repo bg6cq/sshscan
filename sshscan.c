@@ -10,6 +10,7 @@ uint8_t verbose = 0;
 uint32_t port = 22;
 int scan_times = 0;
 int retry = 5;
+int exit_when_success = 1;
 
 const unsigned int d_nproc = 10;
 const unsigned long d_timeout = 3;
@@ -18,10 +19,11 @@ void help(){
     printf("\nMultithreaded SSH scan tool for one host ip\n");
     printf("Use: sshscan [OPTIONS] [USER_PASSW FILE] [HOST IP]\n");
     printf("Options:\n");
-    printf("\t-t [NUMTHREADS]: Change the number of threads used. Default is %d\n",d_nproc);
-    printf("\t-s [TIMEOUT]: Change the timeout for the connection in seconds. Default is %ld\n",d_timeout);
+    printf("\t-t [NUMTHREADS]: Change the number of threads used. Default is %d\n", d_nproc);
+    printf("\t-s [TIMEOUT]: Change the timeout for the connection in seconds. Default is %ld\n", d_timeout);
     printf("\t-p [PORT]: Specify another port to connect to\n");
     printf("\t-r [RETRY]: Specify retry times when error, Default is %d\n", retry);
+    printf("\t-e : do not exit when success\n");
     printf("\t-h : Show this help\n");
     printf("\t-v : Verbose mode\n");
 
@@ -67,7 +69,6 @@ int ConnectSSH(int jobid, uint32_t ipaddr, char* user, char *passwd){
     if (verbose) printf(ANSI_COLOR_BOLD"JOB %4d [%s]"ANSI_COLOR_ENDC" Trying with user:%s  pass:%s\n",jobid, ip2str(ipaddr),user,passwd);
     int retries = 0;
     while(1) {
-
         // Open session and set options
         my_ssh_session = ssh_new();
         if (my_ssh_session == NULL)
@@ -83,15 +84,17 @@ int ConnectSSH(int jobid, uint32_t ipaddr, char* user, char *passwd){
         if (rc != SSH_OK){
             if(verbose) printf(ANSI_COLOR_BOLD"JOB %4d [%s]"ANSI_COLOR_ENDC" try %d Error connecting: %s\n",jobid,ip2str(ipaddr), retries, ssh_get_error(my_ssh_session));
             ssh_free(my_ssh_session);
-            if( (retry>0) && (retries>=retry)) 
+            if( (retry>0) && (retries>=retry)) {
+                printf(ANSI_COLOR_BOLD"JOB %4d [%s]"ANSI_COLOR_ENDC" SKIP %s %s %s\n",jobid,ip2str(ipaddr), ip2str(ipaddr), user, passwd);
                 return return_val;
+	    }
         } else
             break;
     }
 
     rc = ssh_userauth_password(my_ssh_session, NULL, passwd);
     if (rc != SSH_AUTH_SUCCESS){
-        if (verbose) printf(ANSI_COLOR_BOLD"JOB %4d [%s]"ANSI_COLOR_ENDC" Error authenticating with user:%s pass: %s, %s\n",jobid, ip2str(ipaddr),user,passwd,ssh_get_error(my_ssh_session));
+        if (verbose) printf(ANSI_COLOR_BOLD"JOB %4d [%s]"ANSI_COLOR_ENDC" Error authenticating with user:%s pass: %s %s\n",jobid, ip2str(ipaddr),user,passwd,ssh_get_error(my_ssh_session));
         ssh_disconnect(my_ssh_session);
         ssh_free(my_ssh_session);
         return return_val;
@@ -101,7 +104,9 @@ int ConnectSSH(int jobid, uint32_t ipaddr, char* user, char *passwd){
 	FILE *f = fopen("valid_credentials", "a");
 	fprintf(f, "[%s][%s:%s]\n",ip2str(ipaddr),user,passwd);
 	fclose(f);
-
+	
+        if(exit_when_success) 
+            exit(0);
         return_val=1;
     }
     ssh_disconnect(my_ssh_session);
@@ -135,7 +140,7 @@ void checkSSH(void *context){
 int main(int argc, char ** argv){
   int c;
 
-  while ((c = getopt (argc, argv, "hvp:t:s:r:")) != -1)
+  while ((c = getopt (argc, argv, "hvep:t:s:r:")) != -1)
     switch (c){
       case 'h':
         help();
@@ -143,6 +148,9 @@ int main(int argc, char ** argv){
         break;
       case 'v':
         verbose = 1;
+        break;
+      case 'e':
+        exit_when_success = 0;
         break;
       case 'p':
         port = atoi(optarg);
@@ -190,7 +198,6 @@ int main(int argc, char ** argv){
         memcpy(words[index],buff,blen-1);
 	words[index][blen-1]=0;
         //if (DEBUGON) printf("pass-user: %s\n",words[index]);
-
         index++;
     }
     fclose(fp);
@@ -212,7 +219,7 @@ int main(int argc, char ** argv){
         targs->wtable = words;
         targs->solution = -1;
         thpool_add_work(thpool, (void*)checkSSH, (void*)targs);
-        if(verbose) printf("jobqueue-len=%d\n", thpool_num_jobs(thpool));
+        //if(verbose) printf("jobqueue-len=%d\n", thpool_num_jobs(thpool));
         while(thpool_num_jobs(thpool)>nproc*2) {
 	    // if(verbose) printf("sleep 1 for job to run\n");
 	    sleep(1);
