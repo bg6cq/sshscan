@@ -140,6 +140,7 @@ void checkSSH(void *context){
 int main(int argc, char ** argv){
   int c;
 
+  setlinebuf(stdout);
   while ((c = getopt (argc, argv, "hvep:t:s:r:")) != -1)
     switch (c){
       case 'h':
